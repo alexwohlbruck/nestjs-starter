@@ -1,12 +1,15 @@
 import { Controller, Request, Post, UseGuards, Get, Res } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { AuthService } from '../auth/auth.service'
-import { jwtConstants } from '../auth/constants'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { LocalAuthGuard } from '../auth/local-auth.guard'
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -15,8 +18,8 @@ export class AuthController {
 
     res.cookie('access_token', response.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: jwtConstants.lifetime,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      maxAge: this.configService.get('JWT_LIFETIME'),
     })
 
     return response
