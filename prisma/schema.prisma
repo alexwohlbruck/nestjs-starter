@@ -5,21 +5,26 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator nestjsDto {
+  provider = "prisma-generator-nestjs-dto"
+}
+
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
-type Name {
-  first String
-  last  String
-}
+// type Name {
+//   first String
+//   last  String
+// }
 
 model User {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   email    String @unique
   password String
-  name     Name
+  name     String
+  // name     Name
   // posts    Post[]
 }
 
