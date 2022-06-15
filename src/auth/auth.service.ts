@@ -9,12 +9,13 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.usersService.findOne(username)
-    if (user && user.password === password) {
-      const { password, ...result } = user
-      return result
-    }
+  async validateUser(email: string, password: string): Promise<any> {
+    // TODO: Convert to prisma query
+    // const user = await this.usersService.findOne(email)
+    // if (user && user.password === password) {
+    //   const { password, ...result } = user
+    //   return result
+    // }
     return null
   }
 
