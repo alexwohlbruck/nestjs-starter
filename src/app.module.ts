@@ -16,6 +16,7 @@ import { PrismaService } from './prisma/prisma.service'
           .valid('development', 'production', 'test', 'prod')
           .default('development'),
         PORT: Joi.number().default(3000),
+        DATABSE_URL: Joi.string(),
         JWT_SECRET: Joi.string().default('secret'),
         JWT_LIFETIME: Joi.number().default(1000 * 60 * 60 * 24 * 7),
         COOKIE_SECRET: Joi.string().default('secret'),
