@@ -10,13 +10,13 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Prisma, User as UserModel } from '@prisma/client'
 import { UsersService } from './users.service'
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiTags } from '@nestjs/swagger'
 
 class Test {
   @ApiProperty()
   name: string
 }
-
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
