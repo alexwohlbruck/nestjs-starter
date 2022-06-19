@@ -1,22 +1,32 @@
-import { Injectable } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { UsersService } from '../users/users.service'
+import { PrismaService } from '../prisma/prisma.service'
+import { compare, hash } from 'bcrypt'
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
   async validateUser(email: string, password: string): Promise<any> {
-    // TODO: Convert to prisma query
-    // const user = await this.usersService.findOne(email)
-    // if (user && user.password === password) {
-    //   const { password, ...result } = user
-    //   return result
-    // }
-    return null
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    })
+    if (!user) {
+      throw new NotFoundException("User doesn't exist")
+    }
+    if (!user.emailVerified) {
+      throw new ForbiddenException('Email not verified')
+    }
+    const isPasswordMatched = await compare(password, user.password)
+    if (!isPasswordMatched) {
+      throw new UnauthorizedException('Invalid password')
+    }
+    return user
   }
 
   async login(user: any) {

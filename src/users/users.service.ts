@@ -11,12 +11,12 @@ import {
   VerificationCode,
   VerificationCodeType,
 } from '@prisma/client'
-import { hash } from 'bcrypt'
 import { CreateUserDto } from '../auth/dto/CreateUserDto'
+import { hash } from 'bcrypt'
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findOne(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
@@ -53,7 +53,7 @@ export class UsersService {
     const newUser = await this.prisma.user.create({
       data: {
         ...data,
-        password: await hash(data.password, 12), // TODO: Salt?? Apparently bcrypt might handle this automatically
+        password: await hash(data.password, 12),
       },
     })
 
@@ -119,6 +119,7 @@ export class UsersService {
     return user as User
   }
 
+  // ! Probably don't need this
   async updateUser(params: {
     where: Prisma.UserWhereUniqueInput
     data: Prisma.UserUpdateInput
@@ -130,6 +131,7 @@ export class UsersService {
     })
   }
 
+  // ! Probably don't need this
   async deleteUser(where: Prisma.UserWhereUniqueInput): Promise<User> {
     return this.prisma.user.delete({ where })
   }
