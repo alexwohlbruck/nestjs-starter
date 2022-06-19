@@ -11,7 +11,6 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Prisma, User as UserModel } from '@prisma/client'
 import { UsersService } from './users.service'
 import { ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger'
-import { CreateUserDto } from '../generated/nestjs-dto/create-user.dto'
 
 class Test {
   @ApiProperty()
@@ -26,18 +25,9 @@ export class UsersController {
    * Return the user profile
    */
   @UseGuards(JwtAuthGuard)
-  @Get('profile')
+  @Get('me')
   getProfile(@Request() req) {
     return req.user
-  }
-
-  // TODO: Move to auth module
-  @Post('user')
-  async signupUser(
-    @Body()
-    userData: CreateUserDto,
-  ): Promise<UserModel> {
-    return this.usersService.createUser(userData)
   }
 
   // Search user

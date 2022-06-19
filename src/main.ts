@@ -8,6 +8,7 @@ import fastifyCookie from 'fastify-cookie'
 import { AppModule } from './app.module'
 import { PrismaService } from './prisma/prisma.service'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { ValidationPipe } from '@nestjs/common'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -23,6 +24,12 @@ async function bootstrap() {
 
   await prismaService.enableShutdownHooks(app)
   await bootstrapSwagger(app)
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+    }),
+  )
+
   await app.register(fastifyCookie, {
     secret: cookieSecret,
   })
