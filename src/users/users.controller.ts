@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  InternalServerErrorException,
   Post,
   Query,
   Request,
@@ -11,6 +12,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Prisma, User as UserModel } from '@prisma/client'
 import { UsersService } from './users.service'
 import { ApiProperty, ApiTags } from '@nestjs/swagger'
+import { NotifierService } from '../notifier/notifier.service'
 
 class Test {
   @ApiProperty()
@@ -19,7 +21,10 @@ class Test {
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly notifierService: NotifierService,
+  ) {}
 
   /**
    * Return the user profile
@@ -48,8 +53,14 @@ export class UsersController {
   @Post('test')
   async test(
     @Body()
-    data: Test,
+    data: {
+      message: string
+    },
   ) {
-    return data
+    try {
+      return await this.notifierService.sendSms('+17045599636', data.message)
+    } catch (e) {
+      throw new InternalServerErrorException(e.message)
+    }
   }
 }
