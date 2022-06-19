@@ -27,7 +27,9 @@ export class NotifierService {
       to,
       subject,
       template,
-      context,
+      context: {
+        appName: process.env.APP_NAME || 'Example app', // TODO: Use config service
+      },
     })
   }
 

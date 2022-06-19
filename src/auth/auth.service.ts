@@ -11,10 +11,15 @@ import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto } from '../auth/dto/CreateUserDto'
 import { hash, compare } from 'bcrypt'
+import { NotifierService } from '../notifier/notifier.service'
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly notifierService: NotifierService,
+  ) {}
 
   /**
    * Generate a password hash
@@ -133,8 +138,25 @@ export class AuthService {
       },
     })
 
-    this.createVerificationCode(newUser.id, VerificationCodeType.EMAIL)
-    // TODO: Email code to user with notification service
+    const verifcationCode = await this.createVerificationCode(
+      newUser.id,
+      VerificationCodeType.EMAIL,
+    )
+    try {
+      await this.notifierService.sendEmailWithTemplate(
+        newUser.email,
+        'email-verification',
+        'verifyEmail',
+        {
+          firstName: newUser.name.first,
+          // TODO: Build proper url
+          // url: `${process.env.FRONTEND_URL}/verify-email/${code.code}`,
+          url: `http://localhost:3000/verify-email?code=${verifcationCode.code}`,
+        },
+      )
+    } catch (e) {
+      throw new InternalServerErrorException(e.message)
+    }
 
     return newUser
   }
@@ -168,11 +190,25 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid email.')
     }
-    await this.createVerificationCode(
+    const verifcationCode = await this.createVerificationCode(
       user.id,
       VerificationCodeType.PASSWORD_RESET,
     )
-    // TODO: Email reset link to user with notification service
+    try {
+      await this.notifierService.sendEmailWithTemplate(
+        user.email,
+        'Verify your email',
+        'requestPasswordReset',
+        {
+          firstName: user.name.first,
+          // TODO: Build proper url
+          // url: `${process.env.FRONTEND_URL}/verify-email/${code.code}`,
+          url: `http://localhost:3000/reset-password?code=${verifcationCode.code}`,
+        },
+      )
+    } catch (e) {
+      throw new InternalServerErrorException(e.message)
+    }
     return { message: `Password reset link sent to ${email}.` }
   }
 
