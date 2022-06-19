@@ -32,6 +32,7 @@ model User {
 enum VerificationCodeType {
   EMAIL
   PHONE
+  PASSWORD_RESET
 }
 
 model VerificationCode {

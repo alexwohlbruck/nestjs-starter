@@ -1,16 +1,6 @@
-import {
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import {
-  Prisma,
-  User,
-  VerificationCode,
-  VerificationCodeType,
-} from '@prisma/client'
+import { Prisma, User } from '@prisma/client'
 import { CreateUserDto } from '../auth/dto/CreateUserDto'
 import { hash } from 'bcrypt'
 
@@ -41,82 +31,6 @@ export class UsersService {
       where,
       orderBy,
     })
-  }
-
-  async createUser(data: CreateUserDto): Promise<User> {
-    // Check user exists
-    const user = await this.findOne({ email: data.email })
-    if (user) {
-      throw new ConflictException('User already exists')
-    }
-
-    const newUser = await this.prisma.user.create({
-      data: {
-        ...data,
-        password: await hash(data.password, 12),
-      },
-    })
-
-    this.createVerificationCode(newUser.id)
-    // TODO: Email code to user with notification service
-
-    return newUser
-  }
-
-  /**
-   * Generate a verification code
-   * @returns A 6-digit numeric code
-   */
-  async createVerificationCode(userId: string): Promise<VerificationCode> {
-    const code = (Math.floor(Math.random() * 900000) + 100000).toString()
-    try {
-      return await this.prisma.verificationCode.create({
-        data: {
-          userId: userId,
-          code,
-          type: VerificationCodeType.EMAIL,
-        },
-      })
-    } catch (e) {
-      if (e?.code === 'P2002') {
-        // If the code already exists, try again
-        return this.createVerificationCode(userId)
-      }
-      throw new InternalServerErrorException(e)
-    }
-  }
-
-  /**
-   * Accept an email verification code and mark the user's email as verified
-   */
-  async verifyEmail(code: string): Promise<User> {
-    const foundCode = await this.prisma.verificationCode.findFirst({
-      where: {
-        code,
-        type: VerificationCodeType.EMAIL,
-      },
-    })
-    if (!foundCode) {
-      throw new UnauthorizedException('Invalid verification code')
-    }
-    const promises = [
-      this.prisma.user.update({
-        where: {
-          id: foundCode.userId,
-        },
-        data: {
-          emailVerified: true,
-        },
-      }),
-      this.prisma.verificationCode.delete({
-        where: {
-          id: foundCode.id,
-        },
-      }),
-    ]
-    // Get user from promise results
-    const [user] = await Promise.all(promises)
-    return user as User
   }
 
   // ! Probably don't need this

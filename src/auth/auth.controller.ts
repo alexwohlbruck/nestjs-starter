@@ -49,7 +49,7 @@ export class AuthController {
     @Body()
     userData: CreateUserDto,
   ): Promise<User> {
-    return this.usersService.createUser(userData)
+    return this.authService.register(userData)
   }
 
   /**
@@ -67,6 +67,6 @@ export class AuthController {
    */
   @Post('verify-email')
   async verifyEmail(@Body() { code }: VerifyEmailDto) {
-    return await this.usersService.verifyEmail(code)
+    return await this.authService.verifyEmail(code)
   }
 }
