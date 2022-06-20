@@ -13,6 +13,7 @@ import { User } from '@prisma/client'
 import { AuthService } from '../auth/auth.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { LocalAuthGuard } from '../auth/local-auth.guard'
+import { Public } from './auth-decorators'
 import { CreateUserDto } from './dto/CreateUserDto'
 import { LoginDto } from './dto/LoginDto'
 import {
@@ -23,6 +24,7 @@ import { VerifyEmailDto } from './dto/VerifyEmailDto'
 
 @ApiTags('Authentication')
 @Controller('auth')
+@Public()
 export class AuthController {
   constructor(
     private authService: AuthService,
@@ -67,9 +69,8 @@ export class AuthController {
   /**
    * Log out the user. This is only needed for cookie-based auth
    */
-  @UseGuards(JwtAuthGuard)
-  @Get('logout')
-  logout(@Res() res) {
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res) {
     res.clearCookie('access_token')
     return { message: 'Logged out' }
   }

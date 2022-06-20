@@ -1,6 +1,7 @@
 import * as Joi from 'joi'
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { APP_GUARD } from '@nestjs/core'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AuthModule } from './auth/auth.module'
@@ -8,6 +9,7 @@ import { UsersModule } from './users/users.module'
 import { PrismaService } from './prisma/prisma.service'
 import { NotifierService } from './notifier/notifier.service'
 import { NotifierModule } from './notifier/notifier.module'
+import { JwtAuthGuard } from './auth/jwt-auth.guard'
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { NotifierModule } from './notifier/notifier.module'
           .valid('development', 'production', 'test', 'prod')
           .default('development'),
         PORT: Joi.number().default(3000),
-        DATABSE_URL: Joi.string(),
+        DATABASE_URL: Joi.string(),
         JWT_SECRET: Joi.string().default('secret'),
         JWT_LIFETIME: Joi.number().default(1000 * 60 * 60 * 24 * 7),
         COOKIE_SECRET: Joi.string().default('secret'),
@@ -40,6 +42,14 @@ import { NotifierModule } from './notifier/notifier.module'
     NotifierModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService, NotifierService],
+  providers: [
+    AppService,
+    PrismaService,
+    NotifierService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

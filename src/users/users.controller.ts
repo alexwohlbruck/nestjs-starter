@@ -9,17 +9,15 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { RolesGuard } from '../auth/roles.guard'
 import { Prisma, User as UserModel } from '@prisma/client'
 import { UsersService } from './users.service'
-import { ApiProperty, ApiTags } from '@nestjs/swagger'
+import { ApiTags } from '@nestjs/swagger'
 import { NotifierService } from '../notifier/notifier.service'
 
-class Test {
-  @ApiProperty()
-  name: string
-}
 @ApiTags('Users')
 @Controller('users')
+@UseGuards(RolesGuard)
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
@@ -50,7 +48,7 @@ export class UsersController {
     return this.usersService.find(query)
   }
 
-  @Post('test')
+  @Post()
   async test(
     @Body()
     data: {
