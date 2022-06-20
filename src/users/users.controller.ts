@@ -1,38 +1,23 @@
-import {
-  Body,
-  Controller,
-  Get,
-  InternalServerErrorException,
-  Post,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { Prisma, User as UserModel } from '@prisma/client'
+import { Controller, Get, Query, Request } from '@nestjs/common'
+import { Prisma, Role, User as UserModel } from '@prisma/client'
 import { UsersService } from './users.service'
-import { ApiProperty, ApiTags } from '@nestjs/swagger'
-import { NotifierService } from '../notifier/notifier.service'
+import { ApiTags } from '@nestjs/swagger'
+import { Roles } from '../auth/auth-decorators'
+import { JwtPayload } from '../auth/jwt.strategy'
 
-class Test {
-  @ApiProperty()
-  name: string
-}
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly notifierService: NotifierService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   /**
    * Return the user profile
    */
-  @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(@Request() req) {
-    return req.user
+  @Roles(Role.ADMIN, Role.SUPERVISOR)
+  getProfile(@Request() { user }: { user: JwtPayload }) {
+    console.log({ groups: user.groupIds })
+    return user
   }
 
   // Search user
@@ -48,19 +33,5 @@ export class UsersController {
     },
   ): Promise<UserModel[]> {
     return this.usersService.find(query)
-  }
-
-  @Post('test')
-  async test(
-    @Body()
-    data: {
-      message: string
-    },
-  ) {
-    try {
-      return await this.notifierService.sendSms('+17045599636', data.message)
-    } catch (e) {
-      throw new InternalServerErrorException(e.message)
-    }
   }
 }
