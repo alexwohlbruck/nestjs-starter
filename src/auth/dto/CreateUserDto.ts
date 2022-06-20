@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { Role } from '@prisma/client'
 import { IsEmail, IsNotEmpty } from 'class-validator'
 
 // TODO: Add complete validation rules and make sure the request cannot crash the server
@@ -28,7 +27,4 @@ export class CreateUserDto {
   @ApiProperty()
   @IsNotEmpty()
   password: string
-
-  @ApiProperty({ enum: Role, default: [], isArray: true })
-  roles: Role[]
 }

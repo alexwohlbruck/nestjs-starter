@@ -6,7 +6,12 @@ import {
   InternalServerErrorException,
   ConflictException,
 } from '@nestjs/common'
-import { User, VerificationCode, VerificationCodeType } from '@prisma/client'
+import {
+  User,
+  VerificationCode,
+  VerificationCodeType,
+  UserRole,
+} from '@prisma/client'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto } from '../auth/dto/CreateUserDto'
@@ -81,6 +86,18 @@ export class AuthService {
     return foundCode
   }
 
+  // TODO: Cache this db call with Redis
+  /**
+   * Get a user's roles
+   */
+  async getUserRoles(userId: string): Promise<UserRole[]> {
+    return this.prisma.userRole.findMany({
+      where: {
+        userId,
+      },
+    })
+  }
+
   /**
    * Used by Passport to validate a user who is logging in
    */
@@ -111,7 +128,6 @@ export class AuthService {
     const payload = {
       email: user.email,
       sub: user.id,
-      roles: user.roles,
       name: user.name,
     }
     return {
