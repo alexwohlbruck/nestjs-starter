@@ -1,20 +1,11 @@
 import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common'
 import { PrismaClient } from '@prisma/client'
-
-// TODO: This is a temporary solution to prevent the user's password hash from being used
-async function excludePasswordMiddleware(params, next) {
-  const result = await next(params)
-  if (params?.model === 'User' && params?.args?.select?.password !== true) {
-    delete result.password
-  }
-  return result
-}
+import { excludePassword } from './exclude-password.middleware'
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   async onModuleInit() {
-    this.$use(excludePasswordMiddleware)
-
+    this.$use(excludePassword)
     await this.$connect()
   }
 
