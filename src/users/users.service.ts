@@ -31,6 +31,14 @@ export class UsersService {
     })
   }
 
+  async findById(id: string): Promise<User> {
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    })
+  }
+
   // ! Probably don't need this
   async updateUser(params: {
     where: Prisma.UserWhereUniqueInput

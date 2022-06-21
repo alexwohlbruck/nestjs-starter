@@ -16,8 +16,7 @@ export class UsersController {
   @Get('me')
   @Roles(Role.ADMIN, Role.SUPERVISOR)
   getProfile(@Request() { user }: { user: JwtPayload }) {
-    console.log({ groups: user.groupIds })
-    return user
+    return this.usersService.findById(user.id)
   }
 
   // Search user

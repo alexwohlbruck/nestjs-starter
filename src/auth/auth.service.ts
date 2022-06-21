@@ -101,9 +101,13 @@ export class AuthService {
   /**
    * Used by Passport to validate a user who is logging in
    */
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
+      select: {
+        emailVerified: true,
+        password: true,
+      },
     })
     if (!user) {
       throw new NotFoundException("User doesn't exist.")

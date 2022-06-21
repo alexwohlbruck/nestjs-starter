@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -55,7 +52,9 @@ enum VerificationCodeType {
 model VerificationCode {
   id     String               @id @default(auto()) @map("_id") @db.ObjectId
   userId String               @db.ObjectId
-  code   String               @unique
+  code   String
   type   VerificationCodeType
   // TODO: Expiry date
+
+  @@unique([userId, code, type])
 }
