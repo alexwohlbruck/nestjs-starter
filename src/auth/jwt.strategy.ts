@@ -7,6 +7,7 @@ export class JwtPayload {
   id: string
   sub: string
   email: string
+  authenticated: boolean
   groupIds?: string[];
   [key: string]: any
 }

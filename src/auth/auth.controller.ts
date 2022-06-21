@@ -3,9 +3,9 @@ import {
   Request,
   Post,
   UseGuards,
-  Get,
   Res,
   Body,
+  UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ApiTags } from '@nestjs/swagger'
@@ -30,6 +30,14 @@ export class AuthController {
     private configService: ConfigService,
   ) {}
 
+  setJwtCookie(res, token) {
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      maxAge: this.configService.get('JWT_LIFETIME'),
+    })
+  }
+
   /**
    * Log in
    */
@@ -43,15 +51,37 @@ export class AuthController {
     @Body() _credentials: LoginDto,
     @Res({ passthrough: true }) res,
   ) {
-    const response = await this.authService.signToken(req.user)
+    const twoFactorEnabled = req.user.twoFactorEnabled
 
-    res.cookie('access_token', response.access_token, {
-      httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      maxAge: this.configService.get('JWT_LIFETIME'),
-    })
+    const token = await this.authService.signToken(
+      req.user,
+      !twoFactorEnabled, // If 2fa is enabled, authentication flow hasn't completed yet
+    )
 
-    return response
+    this.setJwtCookie(res, token.access_token)
+
+    return token
+  }
+
+  /**
+   * Validate 2 factor TOTP code
+   */
+  @Post('totp')
+  async validateTotp(
+    @Request()
+    req: {
+      user: User
+    },
+    @Body() { code }: { code: string },
+    @Res({ passthrough: true }) res,
+  ) {
+    const isValid = this.authService.validateTotp(req.user.id, code)
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid TOTP code.')
+    }
+    const token = await this.authService.signToken(req.user, true)
+    this.setJwtCookie(res, token.access_token)
+    return token
   }
 
   /**

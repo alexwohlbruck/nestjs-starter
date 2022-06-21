@@ -22,9 +22,11 @@ import { RolesGuard } from './auth/roles.guard'
           .default('development'),
         PORT: Joi.number().default(3000),
         DATABASE_URL: Joi.string(),
-        JWT_SECRET: Joi.string().default('secret'),
+
         JWT_LIFETIME: Joi.number().default(1000 * 60 * 60 * 24 * 7),
-        COOKIE_SECRET: Joi.string().default('secret'),
+        JWT_SECRET: Joi.string().required(),
+        TOTP_SECRET: Joi.string().required(),
+        COOKIE_SECRET: Joi.string().required(),
 
         MAIL_HOST: Joi.string().required(),
         MAIL_PORT: Joi.number().default(465),

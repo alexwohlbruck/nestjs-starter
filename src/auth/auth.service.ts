@@ -17,6 +17,8 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto } from '../auth/dto/CreateUserDto'
 import { hash, compare } from 'bcrypt'
 import { NotifierService } from '../notifier/notifier.service'
+import { totp } from 'otplib'
+import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class AuthService {
@@ -24,6 +26,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly notifierService: NotifierService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -105,7 +108,11 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email },
       select: {
+        email: true,
+        name: true,
         emailVerified: true,
+        twoFactorEnabled: true,
+        totpSecret: true,
         password: true,
       },
     })
@@ -127,16 +134,34 @@ export class AuthService {
 
   /**
    * Sign a new JWT token for a user
+   * @param user The partial user object that was looked up in the database
+   * @param authenticated Used by 2fa to determine if the authentication flow has been completed, ie. credentials and totp code (if applicable) have been verified
+   * @returns The JWT token
    */
-  async signToken(user: User) {
+  async signToken(user: User, authenticated: boolean) {
     const payload = {
       email: user.email,
       sub: user.id,
       name: user.name,
+      authenticated,
     }
     return {
       access_token: this.jwtService.sign(payload),
     }
+  }
+
+  /**
+   * Builds a TOTP key for a user using their id and a
+   */
+  buildTotpSecret(userId: string) {
+    return totp.generate(`${userId}@${this.configService.get('TOTP_SECRET')}`)
+  }
+
+  /**
+   * Validate TOTP code
+   */
+  validateTotp(userId: string, code: string) {
+    return totp.check(code, this.buildTotpSecret(userId))
   }
 
   /**

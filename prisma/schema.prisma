@@ -29,12 +29,14 @@ type Name {
 }
 
 model User {
-  id            String     @id @default(auto()) @map("_id") @db.ObjectId
-  name          Name
-  email         String     @unique
-  password      String
-  emailVerified Boolean    @default(false)
-  UserRole      UserRole[]
+  id               String     @id @default(auto()) @map("_id") @db.ObjectId
+  name             Name
+  email            String     @unique
+  password         String
+  emailVerified    Boolean    @default(false)
+  twoFactorEnabled Boolean    @default(false)
+  totpSecret       String?    @db.ObjectId
+  UserRole         UserRole[]
 }
 
 model Group {
