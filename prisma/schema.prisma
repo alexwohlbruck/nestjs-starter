@@ -35,7 +35,7 @@ model User {
   password         String
   emailVerified    Boolean    @default(false)
   twoFactorEnabled Boolean    @default(false)
-  totpSecret       String?    @db.ObjectId
+  totpSecret       String?
   UserRole         UserRole[]
 }
 

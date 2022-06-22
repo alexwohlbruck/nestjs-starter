@@ -17,6 +17,7 @@ import { RolesGuard } from './auth/roles.guard'
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
+        APP_NAME: Joi.string().default('My app'),
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test', 'prod')
           .default('development'),
@@ -25,7 +26,7 @@ import { RolesGuard } from './auth/roles.guard'
 
         JWT_LIFETIME: Joi.number().default(1000 * 60 * 60 * 24 * 7),
         JWT_SECRET: Joi.string().required(),
-        TOTP_SECRET: Joi.string().required(),
+        TOTP_SECRET_KEY: Joi.string().required(),
         COOKIE_SECRET: Joi.string().required(),
 
         MAIL_HOST: Joi.string().required(),

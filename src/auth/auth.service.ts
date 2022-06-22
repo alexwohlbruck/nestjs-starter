@@ -19,6 +19,8 @@ import { hash, compare } from 'bcrypt'
 import { NotifierService } from '../notifier/notifier.service'
 import { totp } from 'otplib'
 import { ConfigService } from '@nestjs/config'
+import { keyEncoder } from '@otplib/plugin-thirty-two'
+import { KeyEncodings } from '@otplib/core'
 
 @Injectable()
 export class AuthService {
@@ -108,6 +110,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email },
       select: {
+        id: true,
         email: true,
         name: true,
         emailVerified: true,
@@ -151,17 +154,62 @@ export class AuthService {
   }
 
   /**
-   * Builds a TOTP key for a user using their id and a
+   * Builds a TOTP key for a user using their id and a secret key, encoded in base32
    */
-  buildTotpSecret(userId: string) {
-    return totp.generate(`${userId}@${this.configService.get('TOTP_SECRET')}`)
+  generateTotpSecret(userId: string) {
+    const secret = `${userId}@${this.configService.get('TOTP_SECRET_KEY')}`
+    return keyEncoder(secret, KeyEncodings.ASCII)
+  }
+
+  /**
+   * Generate temporary TOTP code
+   */
+  async generateTotpCode(userId: string) {
+    const secret = this.generateTotpSecret(userId)
+    return totp.generate(secret)
   }
 
   /**
    * Validate TOTP code
    */
-  validateTotp(userId: string, code: string) {
-    return totp.check(code, this.buildTotpSecret(userId))
+  async validateTotp(userId: string, code: string) {
+    console.log(code, await this.generateTotpCode(userId))
+    return totp.check(code, this.generateTotpSecret(userId))
+  }
+
+  /**
+   * Toggle 2FA for a user
+   */
+  async toggleTwoFactor(userId: string) {
+    const { twoFactorEnabled } = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { twoFactorEnabled: true, totpSecret: true },
+    })
+
+    const newSetting = !twoFactorEnabled
+
+    // If user is enabling 2fa, generate a new secret
+    // This value is attached to the prisma query payload
+    let totpSecret = undefined
+    if (newSetting) {
+      totpSecret = {
+        set: this.generateTotpSecret(userId),
+      }
+    }
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        twoFactorEnabled: {
+          set: newSetting,
+        },
+        totpSecret,
+      },
+    })
+
+    return {
+      user,
+      twoFactorEnabled: newSetting,
+    }
   }
 
   /**
