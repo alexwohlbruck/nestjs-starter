@@ -17,7 +17,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto } from '../auth/dto/CreateUserDto'
 import { hash, compare } from 'bcrypt'
 import { NotifierService } from '../notifier/notifier.service'
-import { authenticator, totp } from 'otplib'
+import { authenticator } from 'otplib'
 import { ConfigService } from '@nestjs/config'
 
 @Injectable()
@@ -169,7 +169,7 @@ export class AuthService {
    */
   async generateTotpToken(userId) {
     const secret = await this.getTotpSecret(userId)
-    const token = totp.generate(secret)
+    const token = authenticator.generate(secret)
     console.log({ userId, secret, token })
     return token
   }
@@ -182,7 +182,7 @@ export class AuthService {
     const correctCode = await this.generateTotpToken(userId)
     const secret = await this.getTotpSecret(userId)
     console.log({ token, correctCode, secret })
-    return totp.verify({
+    return authenticator.verify({
       token,
       secret,
     })
