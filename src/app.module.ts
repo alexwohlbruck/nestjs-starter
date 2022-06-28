@@ -26,7 +26,6 @@ import { RolesGuard } from './auth/roles.guard'
 
         JWT_LIFETIME: Joi.number().default(1000 * 60 * 60 * 24 * 7),
         JWT_SECRET: Joi.string().required(),
-        TOTP_SECRET_KEY: Joi.string().required(),
         COOKIE_SECRET: Joi.string().required(),
 
         MAIL_HOST: Joi.string().required(),

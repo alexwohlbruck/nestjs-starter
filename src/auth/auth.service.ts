@@ -17,10 +17,8 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto } from '../auth/dto/CreateUserDto'
 import { hash, compare } from 'bcrypt'
 import { NotifierService } from '../notifier/notifier.service'
-import { totp } from 'otplib'
+import { authenticator, totp } from 'otplib'
 import { ConfigService } from '@nestjs/config'
-import { keyEncoder } from '@otplib/plugin-thirty-two'
-import { KeyEncodings } from '@otplib/core'
 
 @Injectable()
 export class AuthService {
@@ -154,27 +152,44 @@ export class AuthService {
   }
 
   /**
-   * Builds a TOTP key for a user using their id and a secret key, encoded in base32
+   * Get a user's TOTP secret key
    */
-  generateTotpSecret(userId: string) {
-    const secret = `${userId}@${this.configService.get('TOTP_SECRET_KEY')}`
-    return keyEncoder(secret, KeyEncodings.ASCII)
+  async getTotpSecret(userId) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        totpSecret: true,
+      },
+    })
+    return user.totpSecret
   }
 
   /**
    * Generate temporary TOTP code
    */
-  async generateTotpCode(userId: string) {
-    const secret = this.generateTotpSecret(userId)
-    return totp.generate(secret)
+  async generateTotpToken(userId) {
+    const secret = await this.getTotpSecret(userId)
+    const token = totp.generate(secret)
+    console.log({ userId, secret, token })
+    return token
   }
 
   /**
    * Validate TOTP code
    */
-  async validateTotp(userId: string, code: string) {
-    console.log(code, await this.generateTotpCode(userId))
-    return totp.check(code, this.generateTotpSecret(userId))
+  async validateTotpToken(userId: string, token: string) {
+    console.log(userId)
+    const correctCode = await this.generateTotpToken(userId)
+    const secret = await this.getTotpSecret(userId)
+    console.log({ token, correctCode, secret })
+    return totp.verify({
+      token,
+      secret,
+    })
+  }
+
+  async currentTotp(userId: string) {
+    return this.generateTotpToken(userId)
   }
 
   /**
@@ -192,8 +207,10 @@ export class AuthService {
     // This value is attached to the prisma query payload
     let totpSecret = undefined
     if (newSetting) {
+      const secret = authenticator.generateSecret(20)
+      console.log(`Generated secret: ${secret}`)
       totpSecret = {
-        set: this.generateTotpSecret(userId),
+        set: secret,
       }
     }
     const user = await this.prisma.user.update({
@@ -206,10 +223,7 @@ export class AuthService {
       },
     })
 
-    return {
-      user,
-      twoFactorEnabled: newSetting,
-    }
+    return user
   }
 
   /**

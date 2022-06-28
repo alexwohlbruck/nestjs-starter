@@ -70,11 +70,11 @@ export class AuthController {
   }
 
   /**
-   * Validate 2 factor TOTP code
+   * Validate 2 factor TOTP token
    */
   @Post('2fa/totp')
   @UseGuards(JwtAuthGuard) // TODO: Don't require 'authenticated' prop on jwt here
-  async validateTotp(
+  async validateTotpToken(
     @Request()
     req: {
       user: User
@@ -82,9 +82,9 @@ export class AuthController {
     @Body() { code }: { code: string },
     @Res({ passthrough: true }) res,
   ) {
-    const isValid = await this.authService.validateTotp(req.user.id, code)
+    const isValid = await this.authService.validateTotpToken(req.user.id, code)
     if (!isValid) {
-      throw new UnauthorizedException('Invalid TOTP code.')
+      throw new UnauthorizedException('Invalid TOTP token.')
     }
     const token = await this.authService.signToken(req.user, true)
     this.setJwtCookie(res, token.access_token)
@@ -116,12 +116,18 @@ export class AuthController {
       user: User
     },
   ) {
-    const secret = await this.authService.generateTotpSecret(req.user.id)
+    const secret = await this.authService.getTotpSecret(req.user.id)
     const appName = this.configService.get('APP_NAME')
-    const qr = await qrcode.toDataURL(
-      `otpauth://totp/${appName}:${req.user.email}?secret=${secret}&issuer=${appName}`,
-    )
-    return { secret, qrCode: qr }
+    const url = `otpauth://totp/${appName}:${req.user.email}?secret=${secret}&issuer=${appName}`
+    const qr = await qrcode.toDataURL(url)
+    return { secret, url, qrCode: qr }
+  }
+
+  // Return the current totp
+  @Get('2fa/totp/current')
+  @UseGuards(JwtAuthGuard)
+  async getUser(@Request() req: { user: User }) {
+    return this.authService.currentTotp(req.user.id)
   }
 
   /**
