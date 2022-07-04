@@ -25,7 +25,6 @@ import {
 import { VerifyEmailDto } from './dto/VerifyEmailDto'
 import * as qrcode from 'qrcode'
 import { JwtAuthGuard } from './jwt-auth.guard'
-import { PassThrough } from 'stream'
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -59,21 +58,24 @@ export class AuthController {
   ) {
     const twoFactorEnabled = req.user.twoFactorEnabled
 
-    const token = await this.authService.signToken(
+    const { access_token } = await this.authService.signToken(
       req.user,
       !twoFactorEnabled, // If 2fa is enabled, authentication flow hasn't completed yet
     )
 
-    this.setJwtCookie(res, token.access_token)
+    this.setJwtCookie(res, access_token)
 
-    return token
+    return {
+      access_token,
+      twoFactorEnabled,
+    }
   }
 
   /**
    * Validate 2 factor TOTP token
    */
   @Post('2fa/totp')
-  @UseGuards(JwtAuthGuard) // TODO: Don't require 'authenticated' prop on jwt here
+  @UseGuards(JwtAuthGuard)
   async validateTotpToken(
     @Request()
     req: {

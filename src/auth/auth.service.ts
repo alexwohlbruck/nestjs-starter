@@ -18,7 +18,6 @@ import { CreateUserDto } from '../auth/dto/CreateUserDto'
 import { hash, compare } from 'bcrypt'
 import { NotifierService } from '../notifier/notifier.service'
 import { authenticator } from 'otplib'
-import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class AuthService {
@@ -26,7 +25,6 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly notifierService: NotifierService,
-    private readonly configService: ConfigService,
   ) {}
 
   /**

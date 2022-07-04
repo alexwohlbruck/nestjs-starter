@@ -19,6 +19,11 @@ export class RolesGuard implements CanActivate {
     }
     const request = context.switchToHttp().getRequest()
     const user = request.user as JwtPayload
+
+    if (!user.authenticated) {
+      return false
+    }
+
     const userRoles = await this.authService.getUserRoles(user.id)
 
     // Extract group ids the user belongs to and add it to context
