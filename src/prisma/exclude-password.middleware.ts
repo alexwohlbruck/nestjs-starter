@@ -4,8 +4,11 @@
 // ? https://stackoverflow.com/questions/68140035/exclude-users-password-from-query-with-prisma-2/72695395#72695395
 export async function excludePassword(params, next) {
   const result = await next(params)
-  if (params?.model === 'User' && params?.args?.select?.password !== true) {
-    delete result.password
+  const select = params?.args?.select
+
+  if (params?.model === 'User') {
+    if (!select?.password) delete result.password
+    if (!select?.totpSecret) delete result.totpSecret
   }
   return result
 }
